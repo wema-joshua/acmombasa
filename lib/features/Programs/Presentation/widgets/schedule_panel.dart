@@ -22,8 +22,7 @@ class SchedulePanel extends ConsumerWidget {
     final sessionsAsync = ref.watch(sessionsProvider);
     final isToday = DateUtils.isSameDay(day, DateTime.now());
 
-    void shift(int days) => ref.read(scheduleDayProvider.notifier).state =
-        DateTime(day.year, day.month, day.day + days);
+    void shift(int days) => ref.read(scheduleDayProvider.notifier).set(DateTime(day.year, day.month, day.day + days));
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -48,8 +47,7 @@ class SchedulePanel extends ConsumerWidget {
                 icon: const Icon(Icons.chevron_left),
               ),
               TextButton(
-                onPressed: () => ref.read(scheduleDayProvider.notifier).state =
-                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+                onPressed: () => ref.read(scheduleDayProvider.notifier).set(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)),
                 child: const Text('Today'),
               ),
               IconButton(
@@ -61,7 +59,7 @@ class SchedulePanel extends ConsumerWidget {
           ),
           sessionsAsync.when(
             loading: () => const SizedBox(height: 40),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (sessions) {
               final venues = sessions.map((s) => s.program.location).toSet().toList()..sort();
               return Padding(
@@ -79,7 +77,7 @@ class SchedulePanel extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
             child: TextField(
-              onChanged: (v) => ref.read(sessionSearchProvider.notifier).state = v,
+              onChanged: (v) => ref.read(sessionSearchProvider.notifier).set(v),
               decoration: const InputDecoration(
                 isDense: true,
                 prefixIcon: Icon(Icons.search, size: 18),
@@ -97,7 +95,8 @@ class SchedulePanel extends ConsumerWidget {
                 final sessions = all.where((s) {
                   if (venue != null && s.program.location != venue) return false;
                   if (query.isEmpty) return true;
-                    return s.program.name.toLowerCase().contains(query);
+                  return s.program.name.toLowerCase().contains(query) ||
+                      (s.program.facilitator ?? '').toLowerCase().contains(query);
                 }).toList();
                 if (sessions.isEmpty) {
                   return const Center(
@@ -111,12 +110,11 @@ class SchedulePanel extends ConsumerWidget {
                 return ListView.separated(
                   padding: const EdgeInsets.all(12),
                   itemCount: sessions.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (_, i) => _SessionCard(
                     session: sessions[i],
                     selected: sessions[i].program.id == selected,
-                    onTap: () => ref.read(selectedSessionIdProvider.notifier).state =
-                        sessions[i].program.id,
+                    onTap: () => ref.read(selectedSessionIdProvider.notifier).set(sessions[i].program.id),
                   ),
                 );
               },
@@ -130,7 +128,7 @@ class SchedulePanel extends ConsumerWidget {
   Widget _chip(WidgetRef ref, String label, String? value, String? current) {
     final on = value == current;
     return InkWell(
-      onTap: () => ref.read(venueFilterProvider.notifier).state = value,
+      onTap: () => ref.read(venueFilterProvider.notifier).set(value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -175,6 +173,9 @@ class _SessionCard extends StatelessWidget {
     final time = (p.startMinute == null || p.endMinute == null)
         ? 'All day'
         : '${DateFormatter.minutesToTime12(p.startMinute!)} - ${DateFormatter.minutesToTime12(p.endMinute!)}';
+    final cap = p.capacity;
+    final fill = cap == null || cap == 0 ? null : (session.seatsTaken / cap).clamp(0.0, 1.0);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -203,9 +204,26 @@ class _SessionCard extends StatelessWidget {
             const SizedBox(height: 4),
             Wrap(spacing: 12, children: [
               Text(p.location, style: AppTextStyles.caption),
+              if (p.facilitator != null) Text(p.facilitator!, style: AppTextStyles.caption),
             ]),
             const SizedBox(height: 6),
-            Text('${session.seatsTaken} registered', style: AppTextStyles.caption),
+            Row(children: [
+              Text(
+                cap == null
+                    ? '${session.seatsTaken} registered'
+                    : '${session.seatsTaken} / $cap Capacity',
+                style: AppTextStyles.caption,
+              ),
+              if (fill != null) ...[
+                const SizedBox(width: 6),
+                Text('(${(fill * 100).round()}%)',
+                    style: const TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.success)),
+              ],
+              const Spacer(),
+              Text(Pillars.hashtag(p.pillar),
+                  style: const TextStyle(fontSize: 10, color: AppColors.brightBlue)),
+            ]),
           ],
         ),
       ),

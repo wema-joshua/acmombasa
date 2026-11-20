@@ -35,15 +35,13 @@ class _HistoryDialog extends ConsumerWidget {
             final visits = snapshot.data ?? const <Visit>[];
             if (visits.isEmpty) {
               return const Center(
-                child: Text(
-                  'No visits recorded yet.',
-                  style: AppTextStyles.body,
-                ),
+                child: Text('No visits recorded yet.',
+                    style: AppTextStyles.body),
               );
             }
             return ListView.separated(
               itemCount: visits.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, i) {
                 final v = visits[i];
                 final out = v.checkOutAt;
@@ -59,13 +57,9 @@ class _HistoryDialog extends ConsumerWidget {
                   ),
                   trailing: v.workstation == null
                       ? null
-                      : Text(
-                          v.workstation!,
+                      : Text(v.workstation!,
                           style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 12,
-                          ),
-                        ),
+                              color: AppColors.textMuted, fontSize: 12)),
                 );
               },
             );

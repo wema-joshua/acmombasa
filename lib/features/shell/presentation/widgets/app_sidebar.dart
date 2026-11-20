@@ -37,10 +37,7 @@ class AppSidebar extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  'RECEPTION CONSOLE',
-                  style: AppTextStyles.sidebarLabel,
-                ),
+                child: Text('RECEPTION CONSOLE', style: AppTextStyles.sidebarLabel),
               ),
             ),
           Expanded(

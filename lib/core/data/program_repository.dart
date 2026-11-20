@@ -10,6 +10,14 @@ class ProgramRepository {
 
   final AppDatabase _db;
 
+  static const _seedPillars = {
+    'English Conversation': 'English Language & Teaching',
+    'English Lessons & TOEFL Prep': 'English Language & Teaching',
+    'Research & Study': 'EducationUSA & Library',
+    'American Culture Activities': 'Cultural Programs & Arts',
+    'Games Corner & Makerspace': 'STEM & Makerspace Innovation',
+  };
+
   /// Starter schedule so a fresh install isn't empty. Editing programs will
   /// come with the Programs & Activities module.
   Future<void> seedIfEmpty() async {
@@ -39,6 +47,7 @@ class ProgramRepository {
             endMinute: Value(s.$4),
             note: Value(s.$5),
             sortOrder: Value(i),
+            pillar: Value(_seedPillars[s.$1] ?? 'General Programs'),
           ),
         );
       }

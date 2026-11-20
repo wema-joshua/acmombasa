@@ -64,15 +64,13 @@ class Programs extends Table {
   TextColumn get recurrence => text().withDefault(const Constant('daily'))();
 
   /// Strategic pillar used for ECA reporting.
-  TextColumn get pillar =>
-      text().withDefault(const Constant('General Programs'))();
+  TextColumn get pillar => text().withDefault(const Constant('General Programs'))();
 
   /// 'in_person', 'hybrid' or 'outreach'.
   TextColumn get format => text().withDefault(const Constant('in_person'))();
   IntColumn get capacity => integer().nullable()();
   TextColumn get facilitator => text().nullable()();
-  BoolColumn get walkInsAllowed =>
-      boolean().withDefault(const Constant(true))();
+  BoolColumn get walkInsAllowed => boolean().withDefault(const Constant(true))();
 
   /// Comma separated audience tags.
   TextColumn get audience => text().nullable()();

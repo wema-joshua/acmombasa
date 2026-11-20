@@ -9,7 +9,7 @@ import '../../../core/widgets/pill.dart';
 import '../../kiosk/presentation/kiosk_screen.dart';
 import '../../shell/presentation/widgets/cloud_status_dialog.dart';
 import '../application/dashboard_providers.dart';
-import '../application/stat_cards.dart' as dashboard_stats;
+import '../application/stat_cards.dart';
 import 'widgets/find_visitor_card.dart';
 import 'widgets/recent_checkins_card.dart';
 import 'widgets/stat_card.dart';
@@ -69,8 +69,7 @@ class _WelcomeHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pending = ref.watch(pendingSyncCountProvider).asData?.value ?? 0;
-    final syncing =
-        ref.watch(syncControllerProvider).phase == SyncPhase.syncing;
+    final syncing = ref.watch(syncControllerProvider).phase == SyncPhase.syncing;
 
     final title = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,10 +79,8 @@ class _WelcomeHeader extends ConsumerWidget {
           runSpacing: 6,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text(
-              'Welcome back, Receptionist',
-              style: AppTextStyles.pageTitle,
-            ),
+            const Text('Welcome back, Receptionist',
+                style: AppTextStyles.pageTitle),
             const Pill(
               label: 'ACTIVE SESSION',
               background: AppColors.infoSoft,
@@ -116,9 +113,9 @@ class _WelcomeHeader extends ConsumerWidget {
           label: Text('Sync Queue ($pending)'),
         ),
         FilledButton.icon(
-          onPressed: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const KioskScreen())),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const KioskScreen()),
+          ),
           icon: const Icon(Icons.tv_outlined, size: 18),
           label: const Text('Batch Kiosk Mode'),
           style: FilledButton.styleFrom(backgroundColor: AppColors.navy),
@@ -129,11 +126,7 @@ class _WelcomeHeader extends ConsumerWidget {
     if (stacked) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          title,
-          const SizedBox(height: AppSpacing.md),
-          actions,
-        ],
+        children: [title, const SizedBox(height: AppSpacing.md), actions],
       );
     }
     return Row(
@@ -179,7 +172,7 @@ class _StatsGrid extends ConsumerWidget {
       );
     }
 
-    final cards = dashboard_stats.buildStatCards(stats);
+    final cards = buildStatCards(stats);
     final columns = width >= 900 ? 4 : (width >= 520 ? 2 : 1);
 
     if (columns == 4) {
@@ -202,10 +195,7 @@ class _StatsGrid extends ConsumerWidget {
       runSpacing: _gap,
       children: [
         for (final card in cards)
-          SizedBox(
-            width: itemWidth,
-            child: StatCard(data: card),
-          ),
+          SizedBox(width: itemWidth, child: StatCard(data: card)),
       ],
     );
   }

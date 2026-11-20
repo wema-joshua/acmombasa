@@ -87,10 +87,8 @@ class _Brand extends StatelessWidget {
                   'American Corner Mombasa',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyStrong.copyWith(
-                    fontSize: 13.5,
-                    height: 1.2,
-                  ),
+                  style: AppTextStyles.bodyStrong
+                      .copyWith(fontSize: 13.5, height: 1.2),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -138,35 +136,35 @@ class _CloudStatusPill extends ConsumerWidget {
     final (label, background, foreground, dot) = switch (sync.phase) {
       // Same look as the reference design. Changes are still queued locally.
       SyncPhase.notConfigured => (
-        'Local Database Connected (Offline Sync Active)',
-        AppColors.successSoft,
-        AppColors.success,
-        AppColors.successDot,
-      ),
+          'Local Database Connected (Offline Sync Active)',
+          AppColors.successSoft,
+          AppColors.success,
+          AppColors.successDot,
+        ),
       SyncPhase.signedOut => (
-        'Local Database Connected • Cloud not signed in',
-        AppColors.warningSoft,
-        AppColors.warning,
-        AppColors.warning,
-      ),
+          'Local Database Connected • Cloud not signed in',
+          AppColors.warningSoft,
+          AppColors.warning,
+          AppColors.warning,
+        ),
       SyncPhase.syncing => (
-        'Syncing with cloud…',
-        AppColors.infoSoft,
-        AppColors.info,
-        AppColors.brightBlue,
-      ),
+          'Syncing with cloud…',
+          AppColors.infoSoft,
+          AppColors.info,
+          AppColors.brightBlue,
+        ),
       SyncPhase.error => (
-        'Local Database Connected • Sync failed, will retry',
-        AppColors.warningSoft,
-        AppColors.warning,
-        AppColors.warning,
-      ),
+          'Local Database Connected • Sync failed, will retry',
+          AppColors.warningSoft,
+          AppColors.warning,
+          AppColors.warning,
+        ),
       SyncPhase.idle => (
-        'Local Database Connected (Offline Sync Active)',
-        AppColors.successSoft,
-        AppColors.success,
-        AppColors.successDot,
-      ),
+          'Local Database Connected (Offline Sync Active)',
+          AppColors.successSoft,
+          AppColors.success,
+          AppColors.successDot,
+        ),
     };
 
     return Tooltip(
@@ -229,11 +227,8 @@ class _DateTimeCapsuleState extends State<_DateTimeCapsule> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.calendar_today_outlined,
-            size: 14,
-            color: AppColors.textMuted,
-          ),
+          const Icon(Icons.calendar_today_outlined,
+              size: 14, color: AppColors.textMuted),
           const SizedBox(width: 6),
           Text(DateFormatter.fullDate(_now), style: style),
           Container(
@@ -311,10 +306,8 @@ class _UserMenu extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(user.displayName, style: AppTextStyles.bodyStrong),
-              Text(
-                roleLabel,
-                style: AppTextStyles.caption.copyWith(fontSize: 11),
-              ),
+              Text(roleLabel,
+                  style: AppTextStyles.caption.copyWith(fontSize: 11)),
             ],
           ),
           const SizedBox(width: 10),

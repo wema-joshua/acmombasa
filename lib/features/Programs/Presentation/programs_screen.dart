@@ -10,9 +10,10 @@ import '../../../core/domain/app_exception.dart';
 import '../../../core/domain/program_models.dart';
 import '../../../core/services/report_pdf.dart';
 import '../../../core/sync/sync_controller.dart';
-import '../../shell/presentation/sync_status_chip.dart';
+import '../../shell/presentation/widgets/sync_status_chip.dart';
 import '../application/programs_providers.dart';
 import 'dialogs/create_program_dialog.dart';
+import 'dialogs/drafts_dialog.dart';
 import 'widgets/day_summary_cards.dart';
 import 'widgets/roster_panel.dart';
 import 'widgets/schedule_panel.dart';
@@ -24,16 +25,13 @@ class ProgramsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final day = ref.watch(scheduleDayProvider);
     final summary = ref.watch(daySummaryProvider).asData?.value;
-    final sessions =
-        ref.watch(sessionsProvider).asData?.value ?? const <SessionView>[];
+    final sessions = ref.watch(sessionsProvider).asData?.value ?? const <SessionView>[];
     final selectedId = ref.watch(selectedSessionIdProvider);
+    final draftCount = ref.watch(draftSessionsProvider).asData?.value.length ?? 0;
 
     // Keep a valid selection: fall back to the live (or first) session.
-    SessionView? selected = sessions
-        .where((s) => s.program.id == selectedId)
-        .firstOrNull;
-    selected ??=
-        sessions.where((s) => s.phase == SessionPhase.inSession).firstOrNull ??
+    SessionView? selected = sessions.where((s) => s.program.id == selectedId).firstOrNull;
+    selected ??= sessions.where((s) => s.phase == SessionPhase.inSession).firstOrNull ??
         sessions.firstOrNull;
 
     final messenger = ScaffoldMessenger.of(context);
@@ -41,32 +39,29 @@ class ProgramsScreen extends ConsumerWidget {
     Future<void> create() async {
       final created = await showCreateProgramDialog(context, day: day);
       if (created != null) {
-        ref.read(selectedSessionIdProvider.notifier).state = created.id;
-        ref.read(scheduleDayProvider.notifier).state = day;
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('"${created.name}" created.'),
-          ),
-        );
+        if (created.status == 'published') {
+          ref.read(selectedSessionIdProvider.notifier).set(created.id);
+          if (created.sessionDate != null) {
+            ref.read(scheduleDayProvider.notifier).set(created.sessionDate!);
+          }
+        }
+        messenger.showSnackBar(SnackBar(
+          content: Text(created.status == 'published'
+              ? '"${created.name}" published.'
+              : '"${created.name}" saved as a draft.'),
+        ));
       }
     }
 
     Future<void> printSheet() async {
       final s = selected;
       if (s == null) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Select a session first.')),
-        );
+        messenger.showSnackBar(const SnackBar(content: Text('Select a session first.')));
         return;
       }
       try {
-        final entries = await ref
-            .read(sessionRepositoryProvider)
-            .roster(s.program.id, s.day);
-        final bytes = await ReportPdf.attendanceSheet(
-          session: s,
-          entries: entries,
-        );
+        final entries = await ref.read(sessionRepositoryProvider).roster(s.program.id, s.day);
+        final bytes = await ReportPdf.attendanceSheet(session: s, entries: entries);
         await Printing.layoutPdf(
           name: 'Attendance ${s.program.name}',
           onLayout: (_) => bytes,
@@ -95,16 +90,19 @@ class ProgramsScreen extends ConsumerWidget {
                 runSpacing: AppSpacing.sm,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  const Text(
-                    'Programs & Activities Roster',
-                    style: AppTextStyles.pageTitle,
-                  ),
+                  const Text('Programs & Activities Roster', style: AppTextStyles.pageTitle),
                   const SyncStatusChip(),
                   OutlinedButton.icon(
                     onPressed: syncNow,
                     icon: const Icon(Icons.sync, size: 16),
                     label: const Text('Sync Sessions & Rosters'),
                   ),
+                  if (draftCount > 0)
+                    OutlinedButton.icon(
+                      onPressed: () => showDraftsDialog(context),
+                      icon: const Icon(Icons.edit_note, size: 18),
+                      label: Text('Drafts ($draftCount)'),
+                    ),
                   OutlinedButton.icon(
                     onPressed: printSheet,
                     icon: const Icon(Icons.print_outlined, size: 16),
@@ -112,9 +110,7 @@ class ProgramsScreen extends ConsumerWidget {
                   ),
                   FilledButton.icon(
                     onPressed: create,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.navy,
-                    ),
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.navy),
                     icon: const Icon(Icons.add, size: 16),
                     label: const Text('Create New Program / Session  F4'),
                   ),
@@ -143,16 +139,11 @@ class ProgramsScreen extends ConsumerWidget {
                       child: selected == null
                           ? const Card(
                               child: Center(
-                                child: Text(
-                                  'Select a session to see its roster.',
-                                  style: AppTextStyles.body,
-                                ),
+                                child: Text('Select a session to see its roster.',
+                                    style: AppTextStyles.body),
                               ),
                             )
-                          : RosterPanel(
-                              key: ValueKey(selected.program.id),
-                              session: selected,
-                            ),
+                          : RosterPanel(key: ValueKey(selected.program.id), session: selected),
                     ),
                   ],
                 ),

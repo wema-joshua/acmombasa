@@ -15,12 +15,4 @@ enum NavDestination {
 
   final String label;
   final IconData icon;
-
-  /// Screens that exist so far.
-  bool get isImplemented =>
-      this == NavDestination.dashboard ||
-      this == NavDestination.visitorsDirectory ||
-      this == NavDestination.visitHistory ||
-      this == NavDestination.programsAndActivities ||
-      this == NavDestination.reports;
 }

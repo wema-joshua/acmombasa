@@ -16,8 +16,7 @@ class TodaysActivitiesCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activities =
-      ref.watch(todaysActivitiesProvider).asData?.value ?? const <ActivityView>[];
+    final activities = ref.watch(todaysActivitiesProvider).asData?.value ?? const [];
     final stats = ref.watch(dashboardStatsProvider).asData?.value;
     final anyLive = activities.any((a) => a.isLive);
     final total = activities.fold<int>(0, (sum, a) => sum + a.attendees);

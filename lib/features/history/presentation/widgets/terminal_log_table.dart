@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/domain/history_models.dart';
 import '../../../../core/utils/date_format.dart';
@@ -39,7 +38,7 @@ class _TerminalLogTableState extends ConsumerState<TerminalLogTable> {
     final slice = entries.skip(page * _pageSize).take(_pageSize).toList();
     final now = DateTime.now();
 
-    ref.listen(historyFiltersProvider, (_, __) => setState(() => _page = 0));
+    ref.listen(historyFiltersProvider, (_, _) => setState(() => _page = 0));
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -98,7 +97,7 @@ class _TerminalLogTableState extends ConsumerState<TerminalLogTable> {
                         style: AppTextStyles.body))
                 : ListView.separated(
                     itemCount: slice.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (_, i) => _row(slice[i], selected, now),
                   ),
           ),
@@ -153,7 +152,7 @@ class _TerminalLogTableState extends ConsumerState<TerminalLogTable> {
 
     return InkWell(
       onTap: () =>
-          ref.read(selectedHistoryEntryIdProvider.notifier).state = e.visit.id,
+          ref.read(selectedHistoryEntryIdProvider.notifier).set(e.visit.id),
       child: Container(
         color: isSelected ? AppColors.surfaceTinted : null,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

@@ -42,10 +42,7 @@ class SyncService {
       throw const AppException('Cloud sync is not configured.');
     }
     try {
-      await _client.auth.signInWithPassword(
-        email: email.trim(),
-        password: password,
-      );
+      await _client.auth.signInWithPassword(email: email.trim(), password: password);
     } on sb.AuthException catch (e) {
       throw AppException(e.message);
     } catch (_) {
@@ -65,17 +62,12 @@ class SyncService {
     total += await _count(_db.visitors, _db.visitors.dirty);
     total += await _count(_db.programs, _db.programs.dirty);
     total += await _count(
-      _db.programRegistrations,
-      _db.programRegistrations.dirty,
-    );
+        _db.programRegistrations, _db.programRegistrations.dirty);
     total += await _count(_db.visits, _db.visits.dirty);
     return total;
   }
 
-  Future<int> _count(
-    TableInfo<Table, dynamic> table,
-    GeneratedColumn<bool> dirty,
-  ) async {
+  Future<int> _count(TableInfo<Table, dynamic> table, GeneratedColumn<bool> dirty) async {
     final count = countAll();
     final query = _db.selectOnly(table)
       ..addColumns([count])
@@ -115,9 +107,8 @@ class SyncService {
   }
 
   Future<int> _pushVisitors() async {
-    final rows = await (_db.select(
-      _db.visitors,
-    )..where((t) => t.dirty.equals(true))).get();
+    final rows =
+        await (_db.select(_db.visitors)..where((t) => t.dirty.equals(true))).get();
     if (rows.isEmpty) return 0;
     await _upsertInChunks('visitors', [
       for (final r in rows)
@@ -147,9 +138,8 @@ class SyncService {
   }
 
   Future<int> _pushPrograms() async {
-    final rows = await (_db.select(
-      _db.programs,
-    )..where((t) => t.dirty.equals(true))).get();
+    final rows =
+        await (_db.select(_db.programs)..where((t) => t.dirty.equals(true))).get();
     if (rows.isEmpty) return 0;
     await _upsertInChunks('programs', [
       for (final r in rows)
@@ -183,9 +173,9 @@ class SyncService {
   }
 
   Future<int> _pushRegistrations() async {
-    final rows = await (_db.select(
-      _db.programRegistrations,
-    )..where((t) => t.dirty.equals(true))).get();
+    final rows = await (_db.select(_db.programRegistrations)
+          ..where((t) => t.dirty.equals(true)))
+        .get();
     if (rows.isEmpty) return 0;
     await _upsertInChunks('program_registrations', [
       for (final r in rows)
@@ -207,9 +197,8 @@ class SyncService {
   }
 
   Future<int> _pushVisits() async {
-    final rows = await (_db.select(
-      _db.visits,
-    )..where((t) => t.dirty.equals(true))).get();
+    final rows =
+        await (_db.select(_db.visits)..where((t) => t.dirty.equals(true))).get();
     if (rows.isEmpty) return 0;
     await _upsertInChunks('visits', [
       for (final r in rows)
@@ -238,10 +227,7 @@ class SyncService {
     List<Map<String, dynamic>> rows,
   ) async {
     for (var i = 0; i < rows.length; i += 200) {
-      final chunk = rows.sublist(
-        i,
-        i + 200 > rows.length ? rows.length : i + 200,
-      );
+      final chunk = rows.sublist(i, i + 200 > rows.length ? rows.length : i + 200);
       await _client.from(table).upsert(chunk, onConflict: 'id');
     }
   }
@@ -290,17 +276,12 @@ class SyncService {
   Future<void> _mergeVisitor(Map<String, dynamic> m) async {
     final id = m['id'] as String;
     final remoteUpdated = _local(m['updated_at']);
-    final local = await (_db.select(
-      _db.visitors,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
-    if (local != null &&
-        local.dirty &&
-        local.updatedAt.isAfter(remoteUpdated)) {
+    final local = await (_db.select(_db.visitors)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (local != null && local.dirty && local.updatedAt.isAfter(remoteUpdated)) {
       return; // local edit is newer; it will be pushed next time.
     }
-    await _db
-        .into(_db.visitors)
-        .insertOnConflictUpdate(
+    await _db.into(_db.visitors).insertOnConflictUpdate(
           VisitorsCompanion(
             id: Value(id),
             memberId: Value(m['member_id'] as String),
@@ -324,17 +305,12 @@ class SyncService {
   Future<void> _mergeProgram(Map<String, dynamic> m) async {
     final id = m['id'] as String;
     final remoteUpdated = _local(m['updated_at']);
-    final local = await (_db.select(
-      _db.programs,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
-    if (local != null &&
-        local.dirty &&
-        local.updatedAt.isAfter(remoteUpdated)) {
+    final local = await (_db.select(_db.programs)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (local != null && local.dirty && local.updatedAt.isAfter(remoteUpdated)) {
       return;
     }
-    await _db
-        .into(_db.programs)
-        .insertOnConflictUpdate(
+    await _db.into(_db.programs).insertOnConflictUpdate(
           ProgramsCompanion(
             id: Value(id),
             name: Value(m['name'] as String),
@@ -364,17 +340,13 @@ class SyncService {
   Future<void> _mergeRegistration(Map<String, dynamic> m) async {
     final id = m['id'] as String;
     final remoteUpdated = _local(m['updated_at']);
-    final local = await (_db.select(
-      _db.programRegistrations,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
-    if (local != null &&
-        local.dirty &&
-        local.updatedAt.isAfter(remoteUpdated)) {
+    final local = await (_db.select(_db.programRegistrations)
+          ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (local != null && local.dirty && local.updatedAt.isAfter(remoteUpdated)) {
       return;
     }
-    await _db
-        .into(_db.programRegistrations)
-        .insertOnConflictUpdate(
+    await _db.into(_db.programRegistrations).insertOnConflictUpdate(
           ProgramRegistrationsCompanion(
             id: Value(id),
             programId: Value(m['program_id'] as String),
@@ -390,17 +362,12 @@ class SyncService {
   Future<void> _mergeVisit(Map<String, dynamic> m) async {
     final id = m['id'] as String;
     final remoteUpdated = _local(m['updated_at']);
-    final local = await (_db.select(
-      _db.visits,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
-    if (local != null &&
-        local.dirty &&
-        local.updatedAt.isAfter(remoteUpdated)) {
+    final local = await (_db.select(_db.visits)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (local != null && local.dirty && local.updatedAt.isAfter(remoteUpdated)) {
       return;
     }
-    await _db
-        .into(_db.visits)
-        .insertOnConflictUpdate(
+    await _db.into(_db.visits).insertOnConflictUpdate(
           VisitsCompanion(
             id: Value(id),
             visitorId: Value(m['visitor_id'] as String),

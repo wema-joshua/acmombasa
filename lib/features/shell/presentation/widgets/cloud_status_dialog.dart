@@ -72,10 +72,7 @@ class _CloudStatusDialogState extends ConsumerState<_CloudStatusDialog> {
   @override
   Widget build(BuildContext context) {
     final sync = ref.watch(syncControllerProvider);
-    final pending = ref.watch(pendingSyncCountProvider).maybeWhen(
-          data: (count) => count,
-          orElse: () => 0,
-        );
+    final pending = ref.watch(pendingSyncCountProvider).asData?.value ?? 0;
 
     return AlertDialog(
       title: const Text('Cloud sync'),

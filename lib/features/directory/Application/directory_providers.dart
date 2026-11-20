@@ -4,6 +4,7 @@ import '../../../core/data/directory_repository.dart';
 import '../../../core/database/live_query.dart';
 import '../../../core/domain/directory_models.dart';
 import '../../../core/providers.dart';
+import '../../../core/utils/state_holder.dart';
 
 final directoryRepositoryProvider = Provider<DirectoryRepository>(
   (ref) => DirectoryRepository(ref.watch(databaseProvider)),
@@ -53,17 +54,7 @@ final directoryCategoriesProvider = StreamProvider<List<String>>((ref) {
 });
 
 /// Visitor id shown in the right-hand panel.
-final selectedVisitorIdProvider =
-    NotifierProvider<SelectedVisitorIdNotifier, String?>(
-  SelectedVisitorIdNotifier.new,
-);
-
-class SelectedVisitorIdNotifier extends Notifier<String?> {
-  @override
-  String? build() => null;
-
-  void select(String? id) => state = id;
-}
+final selectedVisitorIdProvider = stateHolderProvider<String?>(() => null);
 
 final visitorProfileProvider =
     StreamProvider.autoDispose.family<VisitorProfileData?, String>((ref, id) {

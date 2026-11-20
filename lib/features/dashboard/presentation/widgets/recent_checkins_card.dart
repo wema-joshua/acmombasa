@@ -48,13 +48,11 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
   void _toast(String message, {SnackBarAction? action}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          action: action,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      ..showSnackBar(SnackBar(
+        content: Text(message),
+        action: action,
+        duration: const Duration(seconds: 4),
+      ));
   }
 
   Future<void> _guard(Future<void> Function() action) async {
@@ -87,8 +85,7 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
 
   @override
   Widget build(BuildContext context) {
-    final all =
-        ref.watch(todayLogProvider).asData?.value ?? const <VisitLogEntry>[];
+    final all = ref.watch(todayLogProvider).asData?.value ?? const <VisitLogEntry>[];
     final inside = all.where((e) => e.isInside).toList();
     final out = all.where((e) => !e.isInside).toList();
 
@@ -142,7 +139,8 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
                 ),
                 if (shown.length < filtered.length)
                   TextButton(
-                    onPressed: () => setState(() => _visibleCount += _pageSize),
+                    onPressed: () =>
+                        setState(() => _visibleCount += _pageSize),
                     child: const Text('Show more'),
                   ),
               ],
@@ -179,11 +177,8 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.receipt_long_outlined,
-                    size: 22,
-                    color: AppColors.brightBlue,
-                  ),
+                  Icon(Icons.receipt_long_outlined,
+                      size: 22, color: AppColors.brightBlue),
                   SizedBox(width: 8),
                   Flexible(
                     child: Text(
@@ -267,27 +262,20 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
             flex: _flex[0],
             child: Row(
               children: [
-                InitialsAvatar(
-                  initials: initialsOf(e.visitor.fullName),
-                  size: 34,
-                ),
+                InitialsAvatar(initials: initialsOf(e.visitor.fullName), size: 34),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        e.visitor.fullName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodyStrong,
-                      ),
-                      Text(
-                        e.visitor.category,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption.copyWith(fontSize: 11),
-                      ),
+                      Text(e.visitor.fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodyStrong),
+                      Text(e.visitor.category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(fontSize: 11)),
                     ],
                   ),
                 ),
@@ -303,10 +291,8 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
           ),
           Expanded(
             flex: _flex[2],
-            child: Text(
-              DateFormatter.time12(e.visit.checkInAt),
-              style: AppTextStyles.bodyStrong,
-            ),
+            child: Text(DateFormatter.time12(e.visit.checkInAt),
+                style: AppTextStyles.bodyStrong),
           ),
           Expanded(
             flex: _flex[3],
@@ -331,8 +317,7 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
                       dotColor: AppColors.successDot,
                     )
                   : Pill(
-                      label:
-                          'Checked Out '
+                      label: 'Checked Out '
                           '(${DateFormatter.time12(e.visit.checkOutAt!)})',
                     ),
             ),
@@ -357,28 +342,23 @@ class _RecentCheckInsCardState extends ConsumerState<RecentCheckInsCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     visualDensity: VisualDensity.compact,
                     foregroundColor: actionColor,
-                    side: BorderSide(
-                      color: actionColor.withValues(alpha: 0.45),
-                    ),
+                    side: BorderSide(color: actionColor.withValues(alpha: 0.45)),
                     textStyle: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
+                        fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                   child: Text(inside ? 'Check Out' : 'Re-Admit'),
                 ),
                 IconButton(
                   tooltip: 'Print badge',
                   onPressed: () => _guard(
-                    () =>
-                        BadgePrinter.print(visitor: e.visitor, visit: e.visit),
+                    () => BadgePrinter.print(
+                      visitor: e.visitor,
+                      visit: e.visit,
+                    ),
                   ),
                   visualDensity: VisualDensity.compact,
-                  icon: const Icon(
-                    Icons.badge_outlined,
-                    size: 18,
-                    color: AppColors.textMuted,
-                  ),
+                  icon: const Icon(Icons.badge_outlined,
+                      size: 18, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -404,13 +384,10 @@ class _FilterTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final tabs = <(_LogFilter, String)>[
       (_LogFilter.all, 'All (${counts[_LogFilter.all] ?? 0})'),
-      (
-        _LogFilter.insideNow,
-        'Inside Now (${counts[_LogFilter.insideNow] ?? 0})',
-      ),
+      (_LogFilter.insideNow, 'Inside Now (${counts[_LogFilter.insideNow] ?? 0})'),
       (
         _LogFilter.checkedOut,
-        'Checked Out (${counts[_LogFilter.checkedOut] ?? 0})',
+        'Checked Out (${counts[_LogFilter.checkedOut] ?? 0})'
       ),
     ];
 

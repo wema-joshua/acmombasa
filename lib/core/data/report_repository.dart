@@ -22,23 +22,22 @@ class ReportRepository {
   ];
 
   static String? cohortOf(String? age) => switch (age) {
-    'Under 13' || '13 - 17' => cohortLabels[0],
-    '18 - 24' => cohortLabels[1],
-    '25 - 34' => cohortLabels[2],
-    '35 - 44' || '45 and above' => cohortLabels[3],
-    _ => null,
-  };
+        'Under 13' || '13 - 17' => cohortLabels[0],
+        '18 - 24' => cohortLabels[1],
+        '25 - 34' => cohortLabels[2],
+        '35 - 44' || '45 and above' => cohortLabels[3],
+        _ => null,
+      };
 
   static DateTime monthStart(DateTime d) => DateTime(d.year, d.month);
 
   /// Months that have any data, newest first (always includes this month).
   Future<List<DateTime>> availableMonths() async {
     final now = monthStart(DateTime.now());
-    final first =
-        await (_db.select(_db.visits)
-              ..orderBy([(v) => OrderingTerm.asc(v.checkInAt)])
-              ..limit(1))
-            .getSingleOrNull();
+    final first = await (_db.select(_db.visits)
+          ..orderBy([(v) => OrderingTerm.asc(v.checkInAt)])
+          ..limit(1))
+        .getSingleOrNull();
     final from = first == null ? now : monthStart(first.checkInAt);
     final months = <DateTime>[];
     var m = now;
@@ -65,36 +64,33 @@ class ReportRepository {
     final visitors = visitorIds.isEmpty
         ? <String, Visitor>{}
         : {
-            for (final v in await (_db.select(
-              _db.visitors,
-            )..where((t) => t.id.isIn(visitorIds))).get())
+            for (final v in await (_db.select(_db.visitors)
+                  ..where((t) => t.id.isIn(visitorIds)))
+                .get())
               v.id: v,
           };
 
-    final newMembers =
-        (await (_db.select(_db.visitors)..where(
-                  (v) =>
-                      v.registeredAt.isBiggerOrEqualValue(start) &
-                      v.registeredAt.isSmallerThanValue(end),
-                ))
-                .get())
-            .length;
+    final newMembers = (await (_db.select(_db.visitors)
+              ..where((v) =>
+                  v.registeredAt.isBiggerOrEqualValue(start) &
+                  v.registeredAt.isSmallerThanValue(end)))
+            .get())
+        .length;
 
     // Demographics over unique visitors in the month.
     var female = 0, male = 0, youth = 0, ageRecorded = 0, residenceRecorded = 0;
     final residence = <String, int>{};
     final cohorts = {for (final c in cohortLabels) c: 0};
     for (final v in visitors.values) {
-      // Read the persisted age field from the generated row map so this
-      // remains compatible with the visitor schema's actual field name.
-      final age = v.toJson()['age'] as String?;
-      final cohort = cohortOf(age);
+      if (v.gender == 'Female') female++;
+      if (v.gender == 'Male') male++;
+      final cohort = cohortOf(v.ageBracket);
       if (cohort != null) {
         ageRecorded++;
         cohorts.update(cohort, (c) => c + 1);
-        if (age == '18 - 24' || age == '25 - 34') youth++;
+        if (v.ageBracket == '18 - 24' || v.ageBracket == '25 - 34') youth++;
       }
-      final r = v.toJson()['residence'] as String?;
+      final r = v.residence;
       if (r != null && r.isNotEmpty) {
         residenceRecorded++;
         residence.update(r, (c) => c + 1, ifAbsent: () => 1);
@@ -110,7 +106,7 @@ class ReportRepository {
     for (final v in visits) {
       final program = v.programId == null ? null : programs[v.programId];
       if (program == null) continue;
-      final pillar = program.toJson()['pillar'] as String? ?? 'Uncategorized';
+      final pillar = program.pillar;
       pillarVisits.update(pillar, (c) => c + 1, ifAbsent: () => 1);
       pillarPeople.putIfAbsent(pillar, () => {}).add(v.visitorId);
       pillarSessions
@@ -131,9 +127,7 @@ class ReportRepository {
         PillarShare(
           label: name,
           count: pillarVisits[name] ?? 0,
-          fraction: programTotal == 0
-              ? 0
-              : (pillarVisits[name] ?? 0) / programTotal,
+          fraction: programTotal == 0 ? 0 : (pillarVisits[name] ?? 0) / programTotal,
         ),
     ]..sort((a, b) => b.count.compareTo(a.count));
     final ledger = [
@@ -153,14 +147,12 @@ class ReportRepository {
       final e = DateTime(s.year, s.month + 1);
       final list = s == start ? visits : await _visitsBetween(s, e);
       final withProgram = list.where((v) => v.programId != null).length;
-      trend.add(
-        MonthBar(
-          label: DateFormatter.monthShort(s),
-          walkIns: list.length - withProgram,
-          programVisits: withProgram,
-          isSelected: s == start,
-        ),
-      );
+      trend.add(MonthBar(
+        label: DateFormatter.monthShort(s),
+        walkIns: list.length - withProgram,
+        programVisits: withProgram,
+        isSelected: s == start,
+      ));
     }
 
     final now = DateTime.now();
@@ -169,8 +161,7 @@ class ReportRepository {
         : end.difference(start).inDays;
 
     List<ShareRow> top(Map<String, int> m, int total, int n) {
-      final list = m.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
+      final list = m.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
       return [
         for (final e in list.take(n))
           ShareRow(
@@ -213,11 +204,10 @@ class ReportRepository {
   }
 
   Future<List<Visit>> _visitsBetween(DateTime start, DateTime end) {
-    return (_db.select(_db.visits)..where(
-          (v) =>
+    return (_db.select(_db.visits)
+          ..where((v) =>
               v.checkInAt.isBiggerOrEqualValue(start) &
-              v.checkInAt.isSmallerThanValue(end),
-        ))
+              v.checkInAt.isSmallerThanValue(end)))
         .get();
   }
 
@@ -227,10 +217,7 @@ class ReportRepository {
   Future<List<List<String>>> utilizationRows(DateTime month) async {
     final start = monthStart(month);
     final end = DateTime(start.year, start.month + 1);
-    final visits = (await _visitsBetween(
-      start,
-      end,
-    )).where((v) => v.programId != null);
+    final visits = (await _visitsBetween(start, end)).where((v) => v.programId != null);
     final programs = await _db.select(_db.programs).get();
 
     final rows = <List<String>>[
@@ -249,21 +236,21 @@ class ReportRepository {
     for (final p in programs) {
       final list = visits.where((v) => v.programId == p.id).toList();
       if (list.isEmpty) continue;
-      final days = list
-          .map((v) => DateFormatter.isoDate(v.checkInAt))
-          .toSet()
-          .length;
+      final days = list.map((v) => DateFormatter.isoDate(v.checkInAt)).toSet().length;
       final people = list.map((v) => v.visitorId).toSet().length;
+      final fill = p.capacity == null
+          ? ''
+          : '${((list.length / days) / p.capacity! * 100).round()}';
       rows.add([
         p.name,
-        p.toJson()['pillar'] as String? ?? 'Uncategorized',
+        p.pillar,
         p.location,
-        p.toJson()['facilitator'] as String? ?? '',
+        p.facilitator ?? '',
         '$days',
         '${list.length}',
         '$people',
-        '',
-        '',
+        p.capacity?.toString() ?? '',
+        fill,
       ]);
     }
     return rows;
@@ -280,24 +267,19 @@ class ReportRepository {
     }
     final visitors = perVisitor.isEmpty
         ? <Visitor>[]
-        : await (_db.select(
-            _db.visitors,
-          )..where((t) => t.id.isIn(perVisitor.keys))).get();
+        : await (_db.select(_db.visitors)..where((t) => t.id.isIn(perVisitor.keys))).get();
 
     final rows = <List<String>>[
       ['Member ID', 'Name', 'Visits this month', 'Member since', 'Type'],
     ];
     for (final v in visitors) {
-      final isNew =
-          !v.registeredAt.isBefore(start) && v.registeredAt.isBefore(end);
+      final isNew = !v.registeredAt.isBefore(start) && v.registeredAt.isBefore(end);
       rows.add([
         v.memberId,
         v.fullName,
         '${perVisitor[v.id]}',
         DateFormatter.isoDate(v.registeredAt),
-        isNew
-            ? 'New member'
-            : (perVisitor[v.id]! > 1 ? 'Returning' : 'Single visit'),
+        isNew ? 'New member' : (perVisitor[v.id]! > 1 ? 'Returning' : 'Single visit'),
       ]);
     }
     return rows;
@@ -307,10 +289,7 @@ class ReportRepository {
   Future<List<List<String>>> partnerRows(DateTime month) async {
     final start = monthStart(month);
     final end = DateTime(start.year, start.month + 1);
-    final visits = (await _visitsBetween(
-      start,
-      end,
-    )).where((v) => v.programId != null);
+    final visits = (await _visitsBetween(start, end)).where((v) => v.programId != null);
     final programs = {
       for (final p in await _db.select(_db.programs).get()) p.id: p,
     };
@@ -326,7 +305,7 @@ class ReportRepository {
         [
           k.split('|').first,
           programs[k.split('|').last]?.name ?? '',
-          programs[k.split('|').last]?.toJson()['pillar'] as String? ?? '',
+          programs[k.split('|').last]?.pillar ?? '',
           programs[k.split('|').last]?.location ?? '',
           '${grouped[k]!.length}',
         ],

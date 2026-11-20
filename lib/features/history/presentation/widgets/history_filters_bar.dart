@@ -45,9 +45,7 @@ class _HistoryFiltersBarState extends ConsumerState<HistoryFiltersBar> {
       ),
     );
     if (picked != null) {
-      ref
-          .read(historyFiltersProvider.notifier)
-          .setCustomRange(picked.start, picked.end);
+      ref.read(historyFiltersProvider.notifier).setCustomRange(picked.start, picked.end);
     }
   }
 
@@ -55,20 +53,8 @@ class _HistoryFiltersBarState extends ConsumerState<HistoryFiltersBar> {
   Widget build(BuildContext context) {
     final f = ref.watch(historyFiltersProvider);
     final notifier = ref.read(historyFiltersProvider.notifier);
-    final rooms = ref
-        .watch(historyRoomsProvider)
-        .when(
-          data: (rooms) => rooms,
-          loading: () => const <String>[],
-          error: (_, __) => const <String>[],
-        );
-    final programs = ref
-        .watch(_programsProvider)
-        .when(
-          data: (programs) => programs,
-          loading: () => const [],
-          error: (_, __) => const [],
-        );
+    final rooms = ref.watch(historyRoomsProvider).asData?.value ?? const [];
+    final programs = ref.watch(_programsProvider).asData?.value ?? const [];
     final last = f.end.subtract(const Duration(days: 1));
 
     return Wrap(
@@ -80,18 +66,9 @@ class _HistoryFiltersBarState extends ConsumerState<HistoryFiltersBar> {
           showSelectedIcon: false,
           segments: const [
             ButtonSegment(value: HistoryPeriod.today, label: Text('Today')),
-            ButtonSegment(
-              value: HistoryPeriod.thisWeek,
-              label: Text('This Week'),
-            ),
-            ButtonSegment(
-              value: HistoryPeriod.thisMonth,
-              label: Text('This Month'),
-            ),
-            ButtonSegment(
-              value: HistoryPeriod.custom,
-              label: Text('Custom Range'),
-            ),
+            ButtonSegment(value: HistoryPeriod.thisWeek, label: Text('This Week')),
+            ButtonSegment(value: HistoryPeriod.thisMonth, label: Text('This Month')),
+            ButtonSegment(value: HistoryPeriod.custom, label: Text('Custom Range')),
           ],
           selected: {f.period},
           onSelectionChanged: (s) {
@@ -125,10 +102,8 @@ class _HistoryFiltersBarState extends ConsumerState<HistoryFiltersBar> {
             controller: _search,
             onChanged: (v) {
               _debounce?.cancel();
-              _debounce = Timer(
-                const Duration(milliseconds: 200),
-                () => notifier.setSearch(v),
-              );
+              _debounce = Timer(const Duration(milliseconds: 200),
+                  () => notifier.setSearch(v));
             },
             decoration: const InputDecoration(
               isDense: true,
@@ -143,9 +118,7 @@ class _HistoryFiltersBarState extends ConsumerState<HistoryFiltersBar> {
           items: [
             const DropdownMenuItem(value: null, child: Text('All Purposes')),
             const DropdownMenuItem(
-              value: HistoryRepository.generalKey,
-              child: Text('General Visit'),
-            ),
+                value: HistoryRepository.generalKey, child: Text('General Visit')),
             for (final p in programs)
               DropdownMenuItem(value: p.id, child: Text(p.name)),
           ],
@@ -154,18 +127,11 @@ class _HistoryFiltersBarState extends ConsumerState<HistoryFiltersBar> {
         _dropdown<String?>(
           value: f.roomKey,
           items: [
+            const DropdownMenuItem(value: null, child: Text('All Rooms & Workstations')),
             const DropdownMenuItem(
-              value: null,
-              child: Text('All Rooms & Workstations'),
-            ),
+                value: RoomKeys.workstation, child: Text('Workstations (any)')),
             const DropdownMenuItem(
-              value: RoomKeys.workstation,
-              child: Text('Workstations (any)'),
-            ),
-            const DropdownMenuItem(
-              value: RoomKeys.noWorkstation,
-              child: Text('No workstation'),
-            ),
+                value: RoomKeys.noWorkstation, child: Text('No workstation')),
             for (final r in rooms) DropdownMenuItem(value: r, child: Text(r)),
           ],
           onChanged: notifier.setRoom,

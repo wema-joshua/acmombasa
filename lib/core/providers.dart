@@ -40,9 +40,8 @@ final programRepositoryProvider = Provider<ProgramRepository>(
 );
 
 /// The signed-in staff member, or null when signed out.
-final sessionProvider = NotifierProvider<SessionController, StaffUser?>(
-  SessionController.new,
-);
+final sessionProvider =
+    NotifierProvider<SessionController, StaffUser?>(SessionController.new);
 
 class SessionController extends Notifier<StaffUser?> {
   @override

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/data/report_repository.dart';
 import '../../../core/database/live_query.dart';
 import '../../../core/domain/report_models.dart';
 import '../../../core/providers.dart';
+import '../../../core/utils/state_holder.dart';
 
 final reportRepositoryProvider = Provider<ReportRepository>(
   (ref) => ReportRepository(
@@ -14,9 +14,7 @@ final reportRepositoryProvider = Provider<ReportRepository>(
 );
 
 /// First day of the month being reported.
-final reportMonthProvider = StateProvider<DateTime>(
-  (ref) => ReportRepository.monthStart(DateTime.now()),
-);
+final reportMonthProvider = stateHolderProvider<DateTime>(() => ReportRepository.monthStart(DateTime.now()));
 
 final reportMonthsProvider = StreamProvider<List<DateTime>>((ref) {
   final db = ref.watch(databaseProvider);

@@ -188,11 +188,8 @@ class _RegisterVisitorDialogState
 
   @override
   Widget build(BuildContext context) {
-    final options = ref.watch(purposeOptionsProvider).when(
-        data: (options) => options,
-        loading: () => const [PurposeOption.general],
-        error: (_, __) => const [PurposeOption.general],
-      );
+    final options = ref.watch(purposeOptionsProvider).asData?.value ??
+        const [PurposeOption.general];
 
     return CallbackShortcuts(
       bindings: {

@@ -105,10 +105,8 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
   }
 
   Future<void> _registerNew() async {
-    final visitor = await showRegisterVisitorDialog(
-      context,
-      initialQuery: _search.text,
-    );
+    final visitor =
+        await showRegisterVisitorDialog(context, initialQuery: _search.text);
     if (visitor == null || !mounted) return;
     setState(() {
       _search.text = visitor.fullName;
@@ -146,9 +144,7 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
       _notice = null;
     });
     try {
-      final result = await ref
-          .read(visitRepositoryProvider)
-          .checkIn(
+      final result = await ref.read(visitRepositoryProvider).checkIn(
             visitor: summary.visitor,
             staffId: staff.id,
             purpose: option.label,
@@ -213,9 +209,8 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
 
   @override
   Widget build(BuildContext context) {
-    final options =
-      ref.watch(purposeOptionsProvider).asData?.value ??
-      const [PurposeOption.general];
+    final options = ref.watch(purposeOptionsProvider).asData?.value ??
+        const [PurposeOption.general];
     _currentOptions = options;
 
     final summary = _selectedId == null
@@ -224,7 +219,9 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
     _currentSummary = summary;
 
     return CallbackShortcuts(
-      bindings: {const SingleActivator(LogicalKeyboardKey.f2): _primaryAction},
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.f2): _primaryAction,
+      },
       child: AppCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -290,9 +287,9 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
 
   Widget _buildSearchRow() {
     OutlineInputBorder border(Color c) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      borderSide: BorderSide(color: c),
-    );
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderSide: BorderSide(color: c),
+        );
 
     return Row(
       children: [
@@ -342,9 +339,7 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.white,
-                  ),
+                      strokeWidth: 2, color: AppColors.white),
                 )
               : const Text('SEARCH'),
         ),
@@ -356,8 +351,7 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.americanRed,
             side: BorderSide(
-              color: AppColors.americanRed.withValues(alpha: 0.45),
-            ),
+                color: AppColors.americanRed.withValues(alpha: 0.45)),
             minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 14),
           ),
@@ -379,10 +373,8 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
             const Icon(Icons.search_off, size: 18, color: AppColors.textMuted),
             const SizedBox(width: 8),
             const Expanded(
-              child: Text(
-                'No visitor matches that search.',
-                style: AppTextStyles.body,
-              ),
+              child: Text('No visitor matches that search.',
+                  style: AppTextStyles.body),
             ),
             TextButton(
               onPressed: _registerNew,
@@ -405,24 +397,18 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
             InkWell(
               onTap: () => _select(_results[i]),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 child: Row(
                   children: [
                     InitialsAvatar(
-                      initials: initialsOf(_results[i].fullName),
-                      size: 30,
-                    ),
+                        initials: initialsOf(_results[i].fullName), size: 30),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        _results[i].fullName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodyStrong,
-                      ),
+                      child: Text(_results[i].fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodyStrong),
                     ),
                     Text(
                       '${_results[i].memberId}  •  '
@@ -451,10 +437,8 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
         children: [
           Icon(Icons.badge_outlined, size: 36, color: AppColors.textFaint),
           SizedBox(height: 10),
-          Text(
-            'Search for a visitor to check them in.',
-            style: AppTextStyles.bodyStrong,
-          ),
+          Text('Search for a visitor to check them in.',
+              style: AppTextStyles.bodyStrong),
           SizedBox(height: 4),
           Text(
             'Type a name, phone number or member ID, or scan a card. '
@@ -515,7 +499,7 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
                   last == null
                       ? 'First visit'
                       : 'Last visited: ${DateFormatter.shortDate(last.checkInAt)} '
-                            '(${DateFormatter.relativeDay(last.checkInAt, now)})',
+                          '(${DateFormatter.relativeDay(last.checkInAt, now)})',
                   textAlign: TextAlign.right,
                   style: AppTextStyles.caption.copyWith(fontSize: 11),
                 ),
@@ -544,21 +528,16 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
                         ),
                         if (visitor.isVerified) ...[
                           const SizedBox(width: 6),
-                          const Icon(
-                            Icons.verified,
-                            size: 16,
-                            color: AppColors.brightBlue,
-                          ),
+                          const Icon(Icons.verified,
+                              size: 16, color: AppColors.brightBlue),
                         ],
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      visitor.email ?? 'No email on file',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption,
-                    ),
+                    Text(visitor.email ?? 'No email on file',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption),
                     Text(
                       PhoneUtils.format(visitor.phone),
                       style: AppTextStyles.caption.copyWith(
@@ -574,15 +553,11 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const Text('MEMBER SINCE', style: AppTextStyles.label),
-                  Text(
-                    DateFormatter.longDate(visitor.registeredAt),
-                    style: AppTextStyles.bodyStrong,
-                  ),
+                  Text(DateFormatter.longDate(visitor.registeredAt),
+                      style: AppTextStyles.bodyStrong),
                   const SizedBox(height: 8),
-                  const Text(
-                    'CUMULATIVE ATTENDANCE',
-                    style: AppTextStyles.label,
-                  ),
+                  const Text('CUMULATIVE ATTENDANCE',
+                      style: AppTextStyles.label),
                   Text(
                     '${summary.totalVisits} '
                     '${summary.totalVisits == 1 ? 'visit' : 'visits'} total',
@@ -725,9 +700,8 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
           child: FilledButton(
             onPressed: _busy ? null : _primaryAction,
             style: FilledButton.styleFrom(
-              backgroundColor: inside
-                  ? AppColors.americanRed
-                  : AppColors.brightBlue,
+              backgroundColor:
+                  inside ? AppColors.americanRed : AppColors.brightBlue,
               minimumSize: const Size(0, 48),
             ),
             child: _busy
@@ -735,9 +709,7 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.white,
-                    ),
+                        strokeWidth: 2, color: AppColors.white),
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -759,17 +731,13 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
                       const SizedBox(width: 10),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.22),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
-                          'F2',
-                          style: TextStyle(fontSize: 10.5),
-                        ),
+                        child:
+                            const Text('F2', style: TextStyle(fontSize: 10.5)),
                       ),
                     ],
                   ),
@@ -800,8 +768,7 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
         color: AppColors.success,
         background: AppColors.successSoft,
         border: const Color(0xFFBBF7D0),
-        bold:
-            '$first checked in today at ${DateFormatter.time12(open.checkInAt)}',
+        bold: '$first checked in today at ${DateFormatter.time12(open.checkInAt)}',
         rest: '$ws (${open.purpose})',
       );
     }
@@ -811,8 +778,7 @@ class _FindVisitorCardState extends ConsumerState<FindVisitorCard> {
         color: AppColors.textSecondary,
         background: AppColors.neutralSoft,
         border: AppColors.border,
-        bold:
-            '$first checked out at ${DateFormatter.time12(latest.checkOutAt!)}',
+        bold: '$first checked out at ${DateFormatter.time12(latest.checkOutAt!)}',
         rest: ' • Visited from ${DateFormatter.time12(latest.checkInAt)}',
       );
     }

@@ -15,53 +15,6 @@ class SessionRepository {
 
   static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  Future<List<Map<String, dynamic>>> _programRegistrationRows({
-    String? programId,
-    String? visitorId,
-    DateTime? sessionDay,
-    int limit = 0,
-  }) async {
-    final clauses = <String>[];
-    final args = <Object>[];
-
-    if (programId != null) {
-      clauses.add('program_id = ?');
-      args.add(programId);
-    }
-    if (visitorId != null) {
-      clauses.add('visitor_id = ?');
-      args.add(visitorId);
-    }
-    if (sessionDay != null) {
-      clauses.add('session_day = ?');
-      args.add(sessionDay);
-    }
-
-    final whereSql = clauses.isEmpty ? '' : ' WHERE ${clauses.join(' AND ')}';
-    final limitSql = limit > 0 ? ' LIMIT $limit' : '';
-    final rows = await _db
-        .customSelect(
-          'SELECT * FROM program_registrations$whereSql$limitSql',
-          variables: [for (final arg in args) Variable(arg)],
-        )
-        .get();
-    return rows.map((row) => row.data).toList();
-  }
-
-  Future<Map<String, dynamic>?> _programRegistration({
-    String? programId,
-    String? visitorId,
-    DateTime? sessionDay,
-  }) async {
-    final rows = await _programRegistrationRows(
-      programId: programId,
-      visitorId: visitorId,
-      sessionDay: sessionDay,
-      limit: 1,
-    );
-    return rows.isEmpty ? null : rows.first;
-  }
-
   // ------------------------------------------------------------ schedule
 
   Future<List<SessionView>> sessionsOn(DateTime date) async {
@@ -75,24 +28,21 @@ class SessionRepository {
         .where((p) => ProgramSchedule.occursOn(p, day))
         .toList();
 
-    final regs = await _programRegistrationRows(sessionDay: day);
-    final visits =
-        await (_db.select(_db.visits)..where(
-              (v) =>
-                  v.programId.isNotNull() &
-                  v.checkInAt.isBiggerOrEqualValue(day) &
-                  v.checkInAt.isSmallerThanValue(
-                    DateTime(day.year, day.month, day.day + 1),
-                  ),
-            ))
-            .get();
+    final regs = await (_db.select(_db.programRegistrations)
+          ..where((r) => r.sessionDay.equals(day)))
+        .get();
+    final visits = await (_db.select(_db.visits)
+          ..where((v) =>
+              v.programId.isNotNull() &
+              v.checkInAt.isBiggerOrEqualValue(day) &
+              v.checkInAt.isSmallerThanValue(
+                  DateTime(day.year, day.month, day.day + 1))))
+        .get();
 
     final views = <SessionView>[];
     for (final p in programs) {
-      final registered = regs.where((r) => r['program_id'] == p.id).toList();
-      final registeredIds = registered
-          .map((r) => r['visitor_id'] as String)
-          .toSet();
+      final registered = regs.where((r) => r.programId == p.id).toList();
+      final registeredIds = registered.map((r) => r.visitorId).toSet();
       final present = visits.where((v) => v.programId == p.id).toList();
       final walkIns = present
           .map((v) => v.visitorId)
@@ -123,25 +73,21 @@ class SessionRepository {
         phase = SessionPhase.scheduled;
       }
 
-      views.add(
-        SessionView(
-          program: p,
-          day: day,
-          registered: registered.length,
-          present: present.map((v) => v.visitorId).toSet().length,
-          walkIns: walkIns,
-          phase: phase,
-          minutesElapsed: elapsed,
-          minutesToStart: toStart,
-          minutesRemaining: remaining,
-        ),
-      );
+      views.add(SessionView(
+        program: p,
+        day: day,
+        registered: registered.length,
+        present: present.map((v) => v.visitorId).toSet().length,
+        walkIns: walkIns,
+        phase: phase,
+        minutesElapsed: elapsed,
+        minutesToStart: toStart,
+        minutesRemaining: remaining,
+      ));
     }
 
     views.sort((a, b) {
-      final c = (a.program.startMinute ?? -1).compareTo(
-        b.program.startMinute ?? -1,
-      );
+      final c = (a.program.startMinute ?? -1).compareTo(b.program.startMinute ?? -1);
       return c != 0 ? c : a.program.sortOrder.compareTo(b.program.sortOrder);
     });
     return views;
@@ -149,22 +95,23 @@ class SessionRepository {
 
   Future<DaySummary> summaryFor(DateTime date) async {
     final sessions = await sessionsOn(date);
-    final live = sessions
-        .where((s) => s.phase == SessionPhase.inSession)
-        .toList();
+    final live = sessions.where((s) => s.phase == SessionPhase.inSession).toList();
 
-    const seatsTotal = 0;
-    const seatsReserved = 0;
+    var seatsTotal = 0;
+    var seatsReserved = 0;
+    for (final s in sessions) {
+      final cap = s.program.capacity;
+      if (cap == null) continue;
+      seatsTotal += cap;
+      seatsReserved += s.seatsTaken > cap ? cap : s.seatsTaken;
+    }
 
     // Flagship: the program with the most check-ins in the last 30 days.
     final since = _day(DateTime.now()).subtract(const Duration(days: 30));
-    final visits =
-        await (_db.select(_db.visits)..where(
-              (v) =>
-                  v.programId.isNotNull() &
-                  v.checkInAt.isBiggerOrEqualValue(since),
-            ))
-            .get();
+    final visits = await (_db.select(_db.visits)
+          ..where((v) =>
+              v.programId.isNotNull() & v.checkInAt.isBiggerOrEqualValue(since)))
+        .get();
     final perProgram = <String, List<Visit>>{};
     for (final v in visits) {
       perProgram.putIfAbsent(v.programId!, () => []).add(v);
@@ -180,9 +127,9 @@ class SessionRepository {
     String? flagshipName;
     var average = 0;
     if (flagshipId != null) {
-      final program = await (_db.select(
-        _db.programs,
-      )..where((p) => p.id.equals(flagshipId!))).getSingleOrNull();
+      final program = await (_db.select(_db.programs)
+            ..where((p) => p.id.equals(flagshipId!)))
+          .getSingleOrNull();
       flagshipName = program?.name;
       final days = perProgram[flagshipId]!
           .map((v) => _day(v.checkInAt))
@@ -215,32 +162,22 @@ class SessionRepository {
 
   Future<List<RosterEntry>> roster(String programId, DateTime date) async {
     final day = _day(date);
-    final regs = await _programRegistrationRows(
-      programId: programId,
-      sessionDay: day,
-    );
-    final visits =
-        await (_db.select(_db.visits)
-              ..where(
-                (v) =>
-                    v.programId.equals(programId) &
-                    v.checkInAt.isBiggerOrEqualValue(day) &
-                    v.checkInAt.isSmallerThanValue(
-                      DateTime(day.year, day.month, day.day + 1),
-                    ),
-              )
-              ..orderBy([(v) => OrderingTerm.asc(v.checkInAt)]))
-            .get();
+    final regs = await (_db.select(_db.programRegistrations)
+          ..where((r) => r.programId.equals(programId) & r.sessionDay.equals(day)))
+        .get();
+    final visits = await (_db.select(_db.visits)
+          ..where((v) =>
+              v.programId.equals(programId) &
+              v.checkInAt.isBiggerOrEqualValue(day) &
+              v.checkInAt.isSmallerThanValue(
+                  DateTime(day.year, day.month, day.day + 1)))
+          ..orderBy([(v) => OrderingTerm.asc(v.checkInAt)]))
+        .get();
 
-    final ids = {
-      ...regs.map((r) => r['visitor_id'] as String),
-      ...visits.map((v) => v.visitorId),
-    };
+    final ids = {...regs.map((r) => r.visitorId), ...visits.map((v) => v.visitorId)};
     if (ids.isEmpty) return const [];
     final visitors = {
-      for (final v in await (_db.select(
-        _db.visitors,
-      )..where((t) => t.id.isIn(ids))).get())
+      for (final v in await (_db.select(_db.visitors)..where((t) => t.id.isIn(ids))).get())
         v.id: v,
     };
 
@@ -248,18 +185,16 @@ class SessionRepository {
     for (final id in ids) {
       final visitor = visitors[id];
       if (visitor == null) continue;
-      final reg = regs.where((r) => r['visitor_id'] == id).firstOrNull;
+      final reg = regs.where((r) => r.visitorId == id).firstOrNull;
       final visit = visits.where((v) => v.visitorId == id).firstOrNull;
-      entries.add(
-        RosterEntry(
-          visitor: visitor,
-          visit: visit,
-          registrationId: reg?['id'] as String?,
-          status: visit != null
-              ? (reg == null ? RosterStatus.walkIn : RosterStatus.present)
-              : RosterStatus.awaiting,
-        ),
-      );
+      entries.add(RosterEntry(
+        visitor: visitor,
+        visit: visit,
+        registrationId: reg?.id,
+        status: visit != null
+            ? (reg == null ? RosterStatus.walkIn : RosterStatus.present)
+            : RosterStatus.awaiting,
+      ));
     }
     entries.sort((a, b) {
       final order = {
@@ -287,26 +222,31 @@ class SessionRepository {
       throw const AppException('This session has already taken place.');
     }
     await _db.transaction(() async {
-      final existing = await _programRegistration(
-        programId: program.id,
-        visitorId: visitor.id,
-        sessionDay: day,
-      );
+      final existing = await (_db.select(_db.programRegistrations)
+            ..where((r) =>
+                r.programId.equals(program.id) &
+                r.visitorId.equals(visitor.id) &
+                r.sessionDay.equals(day))
+            ..limit(1))
+          .getSingleOrNull();
       if (existing != null) {
         throw AppException('${visitor.fullName} is already on this roster.');
       }
-      final session = (await sessionsOn(day))
-          .where((s) => s.program.id == program.id)
-          .firstOrNull;
+      final session = (await sessionsOn(day)).where((s) => s.program.id == program.id).firstOrNull;
       if (session != null && session.isFull) {
-        throw AppException('"${program.name}" is full.');
+        throw AppException('"${program.name}" is full (${program.capacity} seats).');
       }
       final now = DateTime.now();
-      final regId = newId();
-      await _db.customStatement(
-        'INSERT INTO program_registrations (id, program_id, visitor_id, session_day, created_at, updated_at, dirty) VALUES (?, ?, ?, ?, ?, ?, 1)',
-        [regId, program.id, visitor.id, day, now, now],
-      );
+      await _db.into(_db.programRegistrations).insert(
+            ProgramRegistrationsCompanion.insert(
+              id: newId(),
+              programId: program.id,
+              visitorId: visitor.id,
+              sessionDay: day,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
     });
   }
 
@@ -323,31 +263,24 @@ class SessionRepository {
     }
 
     await _db.transaction(() async {
-      final reg = await _programRegistration(
-        programId: program.id,
-        visitorId: visitor.id,
-        sessionDay: today,
-      );
+      final reg = await (_db.select(_db.programRegistrations)
+            ..where((r) =>
+                r.programId.equals(program.id) &
+                r.visitorId.equals(visitor.id) &
+                r.sessionDay.equals(today))
+            ..limit(1))
+          .getSingleOrNull();
 
-      final session = (await sessionsOn(today))
-          .where((s) => s.program.id == program.id)
-          .firstOrNull;
+      final session =
+          (await sessionsOn(today)).where((s) => s.program.id == program.id).firstOrNull;
       final counted = reg != null;
       if (!counted) {
-        final walkInSetting = await _db
-            .customSelect(
-              'SELECT walk_ins_allowed FROM programs WHERE id = ?',
-              variables: [Variable.withString(program.id)],
-            )
-            .getSingleOrNull();
-        final walkInsAllowed = walkInSetting?.data['walk_ins_allowed'];
-        if (walkInsAllowed != true && walkInsAllowed != 1) {
+        if (!program.walkInsAllowed) {
           throw const AppException(
-            'Walk-ins are not allowed for this session. Pre-register the visitor first.',
-          );
+              'Walk-ins are not allowed for this session. Pre-register the visitor first.');
         }
         if (session != null && session.isFull) {
-          throw AppException('"${program.name}" is full.');
+          throw AppException('"${program.name}" is full (${program.capacity} seats).');
         }
       }
 
@@ -358,13 +291,10 @@ class SessionRepository {
         }
         if (open.programId != null) {
           throw AppException(
-            '${visitor.fullName} is already inside for another program. Check them out first.',
-          );
+              '${visitor.fullName} is already inside for another program. Check them out first.');
         }
         final now = DateTime.now();
-        await (_db.update(
-          _db.visits,
-        )..where((v) => v.id.equals(open.id))).write(
+        await (_db.update(_db.visits)..where((v) => v.id.equals(open.id))).write(
           VisitsCompanion(
             programId: Value(program.id),
             purpose: Value(program.name),
@@ -404,6 +334,72 @@ class SessionRepository {
     return admitted;
   }
 
+  // -------------------------------------------------- drafts and cancelling
+
+  /// Saved-but-unpublished sessions, newest first.
+  Future<List<Program>> draftSessions() {
+    return (_db.select(_db.programs)
+          ..where((p) => p.status.equals('draft') & p.isActive.equals(true))
+          ..orderBy([(p) => OrderingTerm.desc(p.updatedAt)]))
+        .get();
+  }
+
+  Future<void> publishDraft(String programId) async {
+    await _db.transaction(() async {
+      final p = await (_db.select(_db.programs)..where((t) => t.id.equals(programId)))
+          .getSingleOrNull();
+      if (p == null) throw const AppException('Session not found.');
+      final day = p.sessionDate == null ? _day(DateTime.now()) : _day(p.sessionDate!);
+      if (day.isBefore(_day(DateTime.now())) && p.recurrence == Recurrence.none) {
+        throw const AppException(
+            'This draft is dated in the past. Create it again with a new date.');
+      }
+      if (p.startMinute != null && p.endMinute != null) {
+        final clash = await _findRoomClash(
+          NewSessionInput(
+            title: p.name,
+            pillar: p.pillar,
+            format: p.format,
+            day: day,
+            startMinute: p.startMinute!,
+            endMinute: p.endMinute!,
+            recurrence: p.recurrence,
+            room: p.location,
+            capacity: p.capacity ?? 1,
+            walkInsAllowed: p.walkInsAllowed,
+            audience: const [],
+            publish: true,
+          ),
+          day,
+          ignoreId: p.id,
+        );
+        if (clash != null) {
+          throw AppException(
+              '${p.location} is already booked for "${clash.name}" at that time.');
+        }
+      }
+      await (_db.update(_db.programs)..where((t) => t.id.equals(programId))).write(
+        ProgramsCompanion(
+          status: const Value('published'),
+          updatedAt: Value(DateTime.now()),
+          dirty: const Value(true),
+        ),
+      );
+    });
+  }
+
+  /// Removes a session from the schedule and from check-in. Past attendance
+  /// stays in the history and reports.
+  Future<void> cancelSession(String programId) async {
+    await (_db.update(_db.programs)..where((t) => t.id.equals(programId))).write(
+      ProgramsCompanion(
+        isActive: const Value(false),
+        updatedAt: Value(DateTime.now()),
+        dirty: const Value(true),
+      ),
+    );
+  }
+
   // ------------------------------------------------------------- creation
 
   Future<String> nextReference() async {
@@ -441,51 +437,46 @@ class SessionRepository {
         final clash = await _findRoomClash(input, day);
         if (clash != null) {
           throw AppException(
-            '${input.room} is already booked for "${clash.name}" at that time.',
-          );
+              '${input.room} is already booked for "${clash.name}" at that time.');
         }
       }
 
       final id = newId();
       final now = DateTime.now();
       final order = (await _db.select(_db.programs).get()).length;
-      await _db.customStatement(
-        'INSERT INTO programs ('
-        'id, name, location, start_minute, end_minute, note, '
-        'recurrence, pillar, format, capacity, facilitator, '
-        'walk_ins_allowed, audience, status, sort_order, updated_at, dirty) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
-        [
-          id,
-          title,
-          input.room.trim(),
-          input.startMinute,
-          input.endMinute,
-          input.note,
-          input.recurrence,
-          input.pillar,
-          input.format,
-          input.capacity,
-          input.facilitator,
-          input.walkInsAllowed ? 1 : 0,
-          input.audience.isEmpty ? null : input.audience.join(','),
-          input.publish ? 'published' : 'draft',
-          order,
-          now,
-        ],
-      );
-      return (_db.select(
-        _db.programs,
-      )..where((p) => p.id.equals(id))).getSingle();
+      await _db.into(_db.programs).insert(
+            ProgramsCompanion.insert(
+              id: id,
+              name: title,
+              location: input.room.trim(),
+              updatedAt: now,
+              startMinute: Value(input.startMinute),
+              endMinute: Value(input.endMinute),
+              note: Value(input.note),
+              sessionDate: Value(day),
+              recurrence: Value(input.recurrence),
+              pillar: Value(input.pillar),
+              format: Value(input.format),
+              capacity: Value(input.capacity),
+              facilitator: Value(input.facilitator),
+              walkInsAllowed: Value(input.walkInsAllowed),
+              audience: Value(input.audience.isEmpty ? null : input.audience.join(',')),
+              status: Value(input.publish ? 'published' : 'draft'),
+              sortOrder: Value(order),
+            ),
+          );
+      return (_db.select(_db.programs)..where((p) => p.id.equals(id))).getSingle();
     });
   }
 
-  Future<Program?> _findRoomClash(NewSessionInput input, DateTime day) async {
-    final candidates = await (_db.select(
-      _db.programs,
-    )..where((p) => p.location.equals(input.room.trim()))).get();
+  Future<Program?> _findRoomClash(NewSessionInput input, DateTime day,
+      {String? ignoreId}) async {
+    final candidates = await (_db.select(_db.programs)
+          ..where((p) => p.location.equals(input.room.trim())))
+        .get();
     // A recurring new session is checked on its first day only.
     for (final p in candidates) {
+      if (p.id == ignoreId) continue;
       if (!ProgramSchedule.occursOn(p, day)) continue;
       final s = p.startMinute;
       final e = p.endMinute;

@@ -114,22 +114,28 @@ class _AddStaffDialogState extends ConsumerState<_AddStaffDialog> {
                         : null,
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                value: _role,
+              InputDecorator(
                 decoration: const InputDecoration(labelText: 'Role'),
-                items: const [
-                  DropdownMenuItem(
-                    value: AuthRepository.roleReceptionist,
-                    child: Text('Receptionist'),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _role,
+                    isExpanded: true,
+                    isDense: true,
+                    items: const [
+                      DropdownMenuItem(
+                        value: AuthRepository.roleReceptionist,
+                        child: Text('Receptionist'),
+                      ),
+                      DropdownMenuItem(
+                        value: AuthRepository.roleAdmin,
+                        child: Text('Administrator'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => _role = v);
+                    },
                   ),
-                  DropdownMenuItem(
-                    value: AuthRepository.roleAdmin,
-                    child: Text('Administrator'),
-                  ),
-                ],
-                onChanged: (v) {
-                  if (v != null) setState(() => _role = v);
-                },
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: AppSpacing.md),

@@ -6,11 +6,13 @@ import '../../../core/sync/sync_controller.dart';
 import '../../auth/presentation/sign_in_screen.dart';
 import '../../directory/presentation/visitors_directory_screen.dart';
 import '../../history/presentation/visit_history_screen.dart';
+import '../../checkin/presentation/quick_check_in_screen.dart';
 import '../../programs/presentation/programs_screen.dart';
+import '../../register/presentation/register_visitor_screen.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../../reports/presentation/reports_screen.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import '../domain/nav_destination.dart';
-import 'placeholder_screen.dart';
 import 'widgets/app_sidebar.dart';
 import 'widgets/app_top_bar.dart';
 
@@ -79,16 +81,15 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   Widget _buildContent() {
-    if (_selected.isImplemented) {
-      return switch (_selected) {
-        NavDestination.dashboard => const DashboardScreen(),
-        NavDestination.visitorsDirectory => const VisitorsDirectoryScreen(),
-        NavDestination.visitHistory => const VisitHistoryScreen(),
-        NavDestination.programsAndActivities => const ProgramsScreen(),
-        NavDestination.reports => const ReportsScreen(),
-        _ => const SizedBox.shrink(),
-      };
-    }
-    return PlaceholderScreen(title: _selected.label, icon: _selected.icon);
+    return switch (_selected) {
+      NavDestination.dashboard => const DashboardScreen(),
+      NavDestination.quickCheckIn => const QuickCheckInScreen(),
+      NavDestination.registerVisitor => const RegisterVisitorScreen(),
+      NavDestination.visitorsDirectory => const VisitorsDirectoryScreen(),
+      NavDestination.visitHistory => const VisitHistoryScreen(),
+      NavDestination.programsAndActivities => const ProgramsScreen(),
+      NavDestination.reports => const ReportsScreen(),
+      NavDestination.settings => const SettingsScreen(),
+    };
   }
 }

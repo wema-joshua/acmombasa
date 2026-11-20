@@ -186,7 +186,7 @@ class ReportsScreen extends ConsumerWidget {
                           ),
                       ],
                       onChanged: (m) {
-                        if (m != null) ref.read(reportMonthProvider.notifier).state = m;
+                        if (m != null) ref.read(reportMonthProvider.notifier).set(m);
                       },
                     ),
                   ),

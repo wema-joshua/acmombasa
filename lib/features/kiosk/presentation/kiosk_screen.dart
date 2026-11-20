@@ -69,9 +69,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
 
     setState(() => _working = true);
     try {
-      final visitor = await ref
-          .read(visitorRepositoryProvider)
-          .findByScan(text);
+      final visitor = await ref.read(visitorRepositoryProvider).findByScan(text);
       if (visitor == null) {
         _add(_Kind.error, 'No visitor found for "$text".');
         return;
@@ -79,8 +77,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
 
       final visits = ref.read(visitRepositoryProvider);
       if (_mode == _KioskMode.checkIn) {
-        final options =
-            ref.read(purposeOptionsProvider).asData?.value ??
+        final options = ref.read(purposeOptionsProvider).asData?.value ??
             const [PurposeOption.general];
         final option = options.firstWhere(
           (o) => (o.programId ?? _generalKey) == _purposeKey,
@@ -93,10 +90,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
           programId: option.programId,
         );
         _processed++;
-        _add(
-          _Kind.success,
-          '${visitor.fullName} checked in (${option.label}).',
-        );
+        _add(_Kind.success, '${visitor.fullName} checked in (${option.label}).');
       } else {
         final open = await visits.openVisitFor(visitor.id);
         if (open == null) {
@@ -108,7 +102,10 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
         _add(_Kind.success, '${visitor.fullName} checked out.');
       }
     } catch (e) {
-      _add(e is AppException ? _Kind.warning : _Kind.error, friendlyError(e));
+      _add(
+        e is AppException ? _Kind.warning : _Kind.error,
+        friendlyError(e),
+      );
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -116,8 +113,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final options =
-        ref.watch(purposeOptionsProvider).asData?.value ??
+    final options = ref.watch(purposeOptionsProvider).asData?.value ??
         const [PurposeOption.general];
     final selected = options.firstWhere(
       (o) => (o.programId ?? _generalKey) == _purposeKey,
@@ -144,11 +140,8 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(
-                            Icons.tv_outlined,
-                            color: AppColors.white,
-                            size: 26,
-                          ),
+                          const Icon(Icons.tv_outlined,
+                              color: AppColors.white, size: 26),
                           const SizedBox(width: 10),
                           const Expanded(
                             child: Text(
@@ -166,9 +159,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
                             label: const Text('Exit (Esc)'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.white,
-                              side: const BorderSide(
-                                color: AppColors.whiteMuted,
-                              ),
+                              side: const BorderSide(color: AppColors.whiteMuted),
                             ),
                           ),
                         ],
@@ -204,23 +195,29 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
                             ),
                             if (_mode == _KioskMode.checkIn) ...[
                               const SizedBox(height: AppSpacing.md),
-                              DropdownButtonFormField<String>(
-                                value: selected.programId ?? _generalKey,
+                              InputDecorator(
                                 decoration: const InputDecoration(
                                   labelText: 'Purpose for everyone scanned',
                                   border: OutlineInputBorder(),
                                 ),
-                                items: [
-                                  for (final o in options)
-                                    DropdownMenuItem(
-                                      value: o.programId ?? _generalKey,
-                                      child: Text(o.label),
-                                    ),
-                                ],
-                                onChanged: (v) {
-                                  setState(() => _purposeKey = v);
-                                  _focus.requestFocus();
-                                },
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: selected.programId ?? _generalKey,
+                                    isExpanded: true,
+                                    isDense: true,
+                                    items: [
+                                      for (final o in options)
+                                        DropdownMenuItem(
+                                          value: o.programId ?? _generalKey,
+                                          child: Text(o.label),
+                                        ),
+                                    ],
+                                    onChanged: (v) {
+                                      setState(() => _purposeKey = v);
+                                      _focus.requestFocus();
+                                    },
+                                  ),
+                                ),
                               ),
                             ],
                             const SizedBox(height: AppSpacing.md),
@@ -231,8 +228,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
                               textInputAction: TextInputAction.done,
                               style: const TextStyle(fontSize: 22),
                               decoration: InputDecoration(
-                                labelText:
-                                    'Scan card or type member ID / phone, '
+                                labelText: 'Scan card or type member ID / phone, '
                                     'then press Enter',
                                 prefixIcon: const Icon(Icons.qr_code_scanner),
                                 border: const OutlineInputBorder(),
@@ -243,8 +239,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
                                           width: 20,
                                           height: 20,
                                           child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
+                                              strokeWidth: 2),
                                         ),
                                       )
                                     : null,
@@ -267,9 +262,8 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
                                 child: Center(
                                   child: Text(
                                     'Results will appear here.',
-                                    style: TextStyle(
-                                      color: AppColors.textFaint,
-                                    ),
+                                    style:
+                                        TextStyle(color: AppColors.textFaint),
                                   ),
                                 ),
                               )
@@ -299,20 +293,20 @@ class _EntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (entry.kind) {
       _Kind.success => (
-        AppColors.success,
-        AppColors.successSoft,
-        Icons.check_circle,
-      ),
+          AppColors.success,
+          AppColors.successSoft,
+          Icons.check_circle,
+        ),
       _Kind.warning => (
-        AppColors.warning,
-        AppColors.warningSoft,
-        Icons.info_outline,
-      ),
+          AppColors.warning,
+          AppColors.warningSoft,
+          Icons.info_outline,
+        ),
       _Kind.error => (
-        AppColors.americanRed,
-        AppColors.dangerSoft,
-        Icons.error_outline,
-      ),
+          AppColors.americanRed,
+          AppColors.dangerSoft,
+          Icons.error_outline,
+        ),
     };
 
     return Container(

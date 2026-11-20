@@ -31,7 +31,7 @@ class _VisitorListPanelState extends ConsumerState<VisitorListPanel> {
     final pageSize = _dense ? 12 : 7;
 
     // Back to page 1 whenever the filters change.
-    ref.listen(directoryQueryProvider, (_, __) => setState(() => _page = 0));
+    ref.listen(directoryQueryProvider, (_, _) => setState(() => _page = 0));
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -74,7 +74,7 @@ class _VisitorListPanelState extends ConsumerState<VisitorListPanel> {
                             style: AppTextStyles.body))
                     : ListView.separated(
                         itemCount: slice.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        separatorBuilder: (_, _) => const Divider(height: 1),
                         itemBuilder: (_, i) => _row(slice[i], selected, now),
                       ),
               ),
@@ -116,7 +116,7 @@ class _VisitorListPanelState extends ConsumerState<VisitorListPanel> {
       RowStatus.inactive => ('Inactive', AppColors.warningSoft, AppColors.warning),
     };
     return InkWell(
-      onTap: () => ref.read(selectedVisitorIdProvider.notifier).state = r.visitor.id,
+      onTap: () => ref.read(selectedVisitorIdProvider.notifier).set(r.visitor.id),
       child: Container(
         color: isSelected ? AppColors.surfaceTinted : null,
         padding: EdgeInsets.symmetric(

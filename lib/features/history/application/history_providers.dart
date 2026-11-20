@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/data/history_repository.dart';
 import '../../../core/database/live_query.dart';
 import '../../../core/domain/history_models.dart';
 import '../../../core/providers.dart';
 import '../../../core/utils/id_generator.dart';
+import '../../../core/utils/state_holder.dart';
 
 final historyRepositoryProvider = Provider<HistoryRepository>(
   (ref) => HistoryRepository(ref.watch(databaseProvider)),
@@ -94,4 +94,4 @@ final historyRoomsProvider = StreamProvider<List<String>>((ref) {
 });
 
 /// Visit id selected in the table (drives the session inspector).
-final selectedHistoryEntryIdProvider = StateProvider<String?>((ref) => null);
+final selectedHistoryEntryIdProvider = stateHolderProvider<String?>(() => null);

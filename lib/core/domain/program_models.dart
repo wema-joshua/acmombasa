@@ -25,10 +25,10 @@ abstract final class ProgramFormat {
   static const outreach = 'outreach';
 
   static String label(String f) => switch (f) {
-    hybrid => 'Hybrid / Virtual Sync',
-    outreach => 'Outreach / Partner Site',
-    _ => 'In-Person (Center)',
-  };
+        hybrid => 'Hybrid / Virtual Sync',
+        outreach => 'Outreach / Partner Site',
+        _ => 'In-Person (Center)',
+      };
 }
 
 abstract final class Recurrence {
@@ -37,10 +37,10 @@ abstract final class Recurrence {
   static const weekly = 'weekly';
 
   static String label(String r) => switch (r) {
-    daily => 'Daily',
-    weekly => 'Weekly',
-    _ => 'One-time Session',
-  };
+        daily => 'Daily',
+        weekly => 'Weekly',
+        _ => 'One-time Session',
+      };
 }
 
 /// Rooms offered when scheduling, with their seat limits.
@@ -58,9 +58,15 @@ abstract final class ProgramSchedule {
 
   /// Does [p] run on [day]? Legacy programs (no date) run every day.
   static bool occursOn(Program p, DateTime day) {
-    // Program has no date field, so active programs are treated as legacy
-    // programs that run every day.
-    return p.isActive;
+    if (!p.isActive || p.status != 'published') return false;
+    final d = _day(day);
+    final first = p.sessionDate == null ? null : _day(p.sessionDate!);
+    if (first != null && d.isBefore(first)) return false;
+    return switch (p.recurrence) {
+      Recurrence.none => first == null || d == first,
+      Recurrence.weekly => first == null || d.weekday == first.weekday,
+      _ => true,
+    };
   }
 }
 
@@ -94,7 +100,8 @@ class SessionView {
   /// People holding a seat: pre-registered plus walk-ins admitted.
   int get seatsTaken => registered + walkIns;
 
-  bool get isFull => seatsTaken >= (knownRooms[program.location] ?? 0);
+  bool get isFull =>
+      program.capacity != null && seatsTaken >= program.capacity!;
 }
 
 enum RosterStatus { present, walkIn, awaiting }

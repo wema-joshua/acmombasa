@@ -45,4 +45,10 @@ class SettingsRepository {
     final raw = await get(SettingKeys.monthlyTarget);
     return int.tryParse(raw ?? '') ?? defaultMonthlyTarget;
   }
+
+  Future<void> setCapacity(int value) =>
+      set(SettingKeys.capacity, value.toString());
+
+  Future<void> setMonthlyTarget(int value) =>
+      set(SettingKeys.monthlyTarget, value.toString());
 }

@@ -65,6 +65,38 @@ class AuthRepository {
     );
   }
 
+  Future<List<StaffUser>> listStaff() {
+    return (_db.select(_db.staffUsers)
+          ..orderBy([(u) => OrderingTerm.asc(u.displayName)]))
+        .get();
+  }
+
+  /// Turns a staff account on or off. Administrators only; you cannot switch
+  /// off your own account or the last active administrator.
+  Future<void> setStaffActive({
+    required StaffUser requester,
+    required String staffId,
+    required bool active,
+  }) async {
+    if (requester.role != roleAdmin) {
+      throw const AppException('Only administrators can change staff accounts.');
+    }
+    if (!active) {
+      if (staffId == requester.id) {
+        throw const AppException('You cannot switch off your own account.');
+      }
+      final admins = await (_db.select(_db.staffUsers)
+            ..where((u) => u.role.equals(roleAdmin) & u.isActive.equals(true)))
+          .get();
+      final target = admins.where((u) => u.id == staffId).firstOrNull;
+      if (target != null && admins.length <= 1) {
+        throw const AppException('At least one administrator must stay active.');
+      }
+    }
+    await (_db.update(_db.staffUsers)..where((u) => u.id.equals(staffId)))
+        .write(StaffUsersCompanion(isActive: Value(active)));
+  }
+
   Future<StaffUser> signIn(String email, String password) async {
     final now = DateTime.now();
     _failures.removeWhere((t) => now.difference(t) > const Duration(minutes: 1));

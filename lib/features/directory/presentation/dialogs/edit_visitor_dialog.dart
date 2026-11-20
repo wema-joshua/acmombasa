@@ -71,12 +71,7 @@ class _EditVisitorDialogState extends ConsumerState<_EditVisitorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final asyncCategories = ref.watch(directoryCategoriesProvider);
-    final known = asyncCategories.when(
-      data: (value) => value,
-      loading: () => const <String>[],
-      error: (_, __) => const <String>[],
-    );
+    final known = ref.watch(directoryCategoriesProvider).asData?.value ?? const [];
     final categories = {..._baseCategories, ...known, _category}.toList();
 
     return AlertDialog(

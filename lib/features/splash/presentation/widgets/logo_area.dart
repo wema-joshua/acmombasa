@@ -33,7 +33,7 @@ class LogoArea extends StatelessWidget {
       child: Image.asset(
         AppAssets.logo,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const _LogoPlaceholder(),
+        errorBuilder: (_, _, _) => const _LogoPlaceholder(),
       ),
     );
   }

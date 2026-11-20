@@ -110,6 +110,10 @@ class VisitorRepository {
               ),
               category: Value(category),
               cardIssued: Value(cardIssued),
+              gender: Value(_clean(gender)),
+              ageBracket: Value(_clean(ageBracket)),
+              residence: Value(_clean(residence)),
+              occupation: Value(_clean(occupation)),
             ),
           );
       return (_db.select(_db.visitors)..where((v) => v.id.equals(id)))

@@ -14,7 +14,7 @@ import '../../../core/services/visit_exporter.dart';
 import '../../../core/utils/format_utils.dart';
 import '../../../core/widgets/pill.dart';
 import '../../dashboard/presentation/dialogs/register_visitor_dialog.dart';
-import '../../shell/presentation/sync_status_chip.dart';
+import '../../shell/presentation/widgets/sync_status_chip.dart';
 import '../application/directory_providers.dart';
 import 'widgets/visitor_detail_panel.dart';
 import 'widgets/visitor_list_panel.dart';
@@ -55,41 +55,29 @@ class _VisitorsDirectoryScreenState
           .read(directoryRepositoryProvider)
           .loadRows(ref.read(directoryQueryProvider));
       final file = await ReportExporters.exportDirectory(rows);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Exported ${rows.length} visitors to ${file.path}'),
-          action: SnackBarAction(
-            label: 'Show',
-            onPressed: () => VisitExporter.reveal(file),
-          ),
-        ),
-      );
+      messenger.showSnackBar(SnackBar(
+        content: Text('Exported ${rows.length} visitors to ${file.path}'),
+        action: SnackBarAction(
+            label: 'Show', onPressed: () => VisitExporter.reveal(file)),
+      ));
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
   Future<void> _register() async {
-    final visitor = await showRegisterVisitorDialog(
-      context,
-      initialQuery: _search.text,
-    );
+    final visitor =
+        await showRegisterVisitorDialog(context, initialQuery: _search.text);
     if (visitor != null) {
-      ref.read(selectedVisitorIdProvider.notifier).state = visitor.id;
+      ref.read(selectedVisitorIdProvider.notifier).set(visitor.id);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final summaryAsync = ref.watch(directorySummaryProvider);
-    final summary = summaryAsync.maybeWhen(
-      data: (data) => data,
-      orElse: () => null,
-    );
+    final summary = ref.watch(directorySummaryProvider).asData?.value;
     final query = ref.watch(directoryQueryProvider);
-    final categories = ref
-        .watch(directoryCategoriesProvider)
-        .maybeWhen(data: (data) => data, orElse: () => const <String>[]);
+    final categories = ref.watch(directoryCategoriesProvider).asData?.value ?? const [];
     final notifier = ref.read(directoryQueryProvider.notifier);
 
     return CallbackShortcuts(
@@ -107,10 +95,7 @@ class _VisitorsDirectoryScreenState
               runSpacing: AppSpacing.sm,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                const Text(
-                  'Visitors Directory',
-                  style: AppTextStyles.pageTitle,
-                ),
+                const Text('Visitors Directory', style: AppTextStyles.pageTitle),
                 Pill(
                   label:
                       '${groupThousands(summary?.totalVisitors ?? 0)} Active Members',
@@ -132,8 +117,7 @@ class _VisitorsDirectoryScreenState
                 FilledButton.icon(
                   onPressed: _register,
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.americanRed,
-                  ),
+                      backgroundColor: AppColors.americanRed),
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Register New Visitor'),
                 ),
@@ -154,8 +138,7 @@ class _VisitorsDirectoryScreenState
                     decoration: const InputDecoration(
                       isDense: true,
                       prefixIcon: Icon(Icons.search, size: 18),
-                      hintText:
-                          'Search name, member ID, phone or email (Ctrl+K)',
+                      hintText: 'Search name, member ID, phone or email (Ctrl+K)',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -163,10 +146,7 @@ class _VisitorsDirectoryScreenState
                 _dropdown<String?>(
                   value: query.category,
                   items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('All Categories'),
-                    ),
+                    const DropdownMenuItem(value: null, child: Text('All Categories')),
                     for (final c in categories)
                       DropdownMenuItem(value: c, child: Text(c)),
                   ],
@@ -176,47 +156,32 @@ class _VisitorsDirectoryScreenState
                   value: query.status,
                   items: const [
                     DropdownMenuItem(
-                      value: DirectoryStatus.all,
-                      child: Text('All Statuses'),
-                    ),
+                        value: DirectoryStatus.all, child: Text('All Statuses')),
                     DropdownMenuItem(
-                      value: DirectoryStatus.insideNow,
-                      child: Text('Inside Now'),
-                    ),
+                        value: DirectoryStatus.insideNow, child: Text('Inside Now')),
                     DropdownMenuItem(
-                      value: DirectoryStatus.active,
-                      child: Text('Active'),
-                    ),
+                        value: DirectoryStatus.active, child: Text('Active')),
                     DropdownMenuItem(
-                      value: DirectoryStatus.inactive,
-                      child: Text('Inactive'),
-                    ),
+                        value: DirectoryStatus.inactive, child: Text('Inactive')),
                   ],
-                  onChanged: (v) =>
-                      notifier.setStatus(v ?? DirectoryStatus.all),
+                  onChanged: (v) => notifier.setStatus(v ?? DirectoryStatus.all),
                 ),
                 _dropdown<DirectorySort>(
                   value: query.sort,
                   items: const [
                     DropdownMenuItem(
-                      value: DirectorySort.recentVisit,
-                      child: Text('Sort: Recent Visit'),
-                    ),
+                        value: DirectorySort.recentVisit,
+                        child: Text('Sort: Recent Visit')),
                     DropdownMenuItem(
-                      value: DirectorySort.nameAsc,
-                      child: Text('Sort: Name A–Z'),
-                    ),
+                        value: DirectorySort.nameAsc, child: Text('Sort: Name A–Z')),
                     DropdownMenuItem(
-                      value: DirectorySort.mostVisits,
-                      child: Text('Sort: Most Visits'),
-                    ),
+                        value: DirectorySort.mostVisits,
+                        child: Text('Sort: Most Visits')),
                     DropdownMenuItem(
-                      value: DirectorySort.newestMember,
-                      child: Text('Sort: Newest Member'),
-                    ),
+                        value: DirectorySort.newestMember,
+                        child: Text('Sort: Newest Member')),
                   ],
-                  onChanged: (v) =>
-                      notifier.setSort(v ?? DirectorySort.recentVisit),
+                  onChanged: (v) => notifier.setSort(v ?? DirectorySort.recentVisit),
                 ),
                 TextButton(
                   onPressed: () {
